@@ -1,0 +1,625 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SkillSwap – Community Skill Exchange with Time Credits</title>
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+    <!-- FontAwesome Icons CDN -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <!-- Chart.js CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="stylesheet" href="/css/dashboard.css">
+</head>
+<body>
+    <div class="app-layout">
+        <!-- Sidebar Navigation -->
+        <aside class="sidebar">
+            <div class="brand">
+                <div class="brand-icon">
+                    <i class="fa-solid fa-repeat"></i>
+                </div>
+                <div class="brand-text">
+                    <h2>SkillSwap</h2>
+                    <span class="badge-time">Time Credits</span>
+                </div>
+            </div>
+
+            <nav class="nav-menu">
+                <a href="#overview" class="nav-item active" data-tab="overview">
+                    <i class="fa-solid fa-chart-pie"></i>
+                    <span>Dashboard</span>
+                </a>
+                <a href="#members" class="nav-item" data-tab="members">
+                    <i class="fa-solid fa-users"></i>
+                    <span>Members</span>
+                </a>
+                <a href="#skills" class="nav-item" data-tab="skills">
+                    <i class="fa-solid fa-graduation-cap"></i>
+                    <span>Skill Offers</span>
+                </a>
+                <a href="#sessions" class="nav-item" data-tab="sessions">
+                    <i class="fa-solid fa-calendar-check"></i>
+                    <span>Sessions</span>
+                </a>
+                <a href="#ledger" class="nav-item" data-tab="ledger">
+                    <i class="fa-solid fa-receipt"></i>
+                    <span>Credit Ledger</span>
+                </a>
+                <a href="#api-explorer" class="nav-item" data-tab="api-explorer">
+                    <i class="fa-solid fa-code"></i>
+                    <span>Live REST APIs</span>
+                </a>
+            </nav>
+
+            <div class="sidebar-footer">
+                <div class="system-status">
+                    <span class="pulse-dot"></span>
+                    <span>MySQL 8.0 Connected</span>
+                </div>
+                <small>SkillSwap DBMS System</small>
+            </div>
+        </aside>
+
+        <!-- Main Content Area -->
+        <main class="main-content">
+            <!-- Top Navbar -->
+            <header class="topbar">
+                <div class="topbar-left">
+                    <h1 id="page-title">Dashboard Overview</h1>
+                    <p class="subtitle" id="page-subtitle">Real-time statistics & activity monitoring</p>
+                </div>
+                <div class="topbar-actions">
+                    <button class="btn btn-seed" id="btn-seed-data" onclick="handleSeedData()" title="Populate realistic demo community data">
+                        <i class="fa-solid fa-wand-magic-sparkles"></i>
+                        <span>Load Sample Data</span>
+                    </button>
+                    <button class="btn btn-secondary" id="btn-refresh" title="Refresh Data">
+                        <i class="fa-solid fa-rotate"></i>
+                        <span>Refresh</span>
+                    </button>
+                    <button class="btn btn-primary" id="btn-quick-session" onclick="openModal('modal-session')">
+                        <i class="fa-solid fa-plus"></i>
+                        <span>Book Session</span>
+                    </button>
+                </div>
+            </header>
+
+            <!-- TAB 1: OVERVIEW -->
+            <section id="tab-overview" class="tab-content active">
+                <!-- Zero State Banner (shows if system has no members) -->
+                <div id="zero-state-banner" class="zero-state-card" style="display: none;">
+                    <div class="zero-state-icon"><i class="fa-solid fa-database"></i></div>
+                    <div class="zero-state-info">
+                        <h4>Welcome to SkillSwap! Database is connected and ready.</h4>
+                        <p>No members or skills found yet. Click below to instantly load sample community members, skill offers, and exchange sessions.</p>
+                    </div>
+                    <button class="btn btn-primary" onclick="handleSeedData()">
+                        <i class="fa-solid fa-wand-magic-sparkles"></i> Populate Demo Data
+                    </button>
+                </div>
+
+                <!-- Clickable Summary KPI Cards -->
+                <div class="kpi-grid">
+                    <div class="kpi-card clickable" onclick="switchTab('members')" title="Click to view all Members">
+                        <div class="kpi-icon indigo"><i class="fa-solid fa-users"></i></div>
+                        <div class="kpi-info">
+                            <span class="kpi-label">Total Members</span>
+                            <h3 class="kpi-value" id="kpi-members">0</h3>
+                            <span class="card-click-hint"><i class="fa-solid fa-arrow-right"></i> View Members</span>
+                        </div>
+                    </div>
+                    <div class="kpi-card clickable" onclick="switchTab('skills')" title="Click to browse Skill Marketplace">
+                        <div class="kpi-icon teal"><i class="fa-solid fa-lightbulb"></i></div>
+                        <div class="kpi-info">
+                            <span class="kpi-label">Skill Offers</span>
+                            <h3 class="kpi-value" id="kpi-skills">0</h3>
+                            <span class="card-click-hint"><i class="fa-solid fa-arrow-right"></i> Explore Skills</span>
+                        </div>
+                    </div>
+                    <div class="kpi-card clickable" onclick="filterSessionsByStatus('PENDING', null); switchTab('sessions')" title="Click to view Pending Requests">
+                        <div class="kpi-icon amber"><i class="fa-solid fa-clock"></i></div>
+                        <div class="kpi-info">
+                            <span class="kpi-label">Pending Requests</span>
+                            <h3 class="kpi-value" id="kpi-pending">0</h3>
+                            <span class="card-click-hint"><i class="fa-solid fa-arrow-right"></i> Review Requests</span>
+                        </div>
+                    </div>
+                    <div class="kpi-card clickable" onclick="filterSessionsByStatus('CONFIRMED', null); switchTab('sessions')" title="Click to view Confirmed Sessions">
+                        <div class="kpi-icon blue"><i class="fa-solid fa-handshake"></i></div>
+                        <div class="kpi-info">
+                            <span class="kpi-label">Confirmed Sessions</span>
+                            <h3 class="kpi-value" id="kpi-confirmed">0</h3>
+                            <span class="card-click-hint"><i class="fa-solid fa-arrow-right"></i> Ready to Complete</span>
+                        </div>
+                    </div>
+                    <div class="kpi-card clickable" onclick="filterSessionsByStatus('COMPLETED', null); switchTab('sessions')" title="Click to view Completed Sessions">
+                        <div class="kpi-icon emerald"><i class="fa-solid fa-circle-check"></i></div>
+                        <div class="kpi-info">
+                            <span class="kpi-label">Completed Sessions</span>
+                            <h3 class="kpi-value" id="kpi-completed">0</h3>
+                            <span class="card-click-hint"><i class="fa-solid fa-arrow-right"></i> View History</span>
+                        </div>
+                    </div>
+                    <div class="kpi-card clickable" onclick="switchTab('ledger')" title="Click to view Credit Ledger">
+                        <div class="kpi-icon gold"><i class="fa-solid fa-coins"></i></div>
+                        <div class="kpi-info">
+                            <span class="kpi-label">Credits in System</span>
+                            <h3 class="kpi-value" id="kpi-credits">0</h3>
+                            <span class="card-click-hint"><i class="fa-solid fa-arrow-right"></i> View Ledger</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Charts Section -->
+                <div class="charts-grid">
+                    <div class="chart-card">
+                        <div class="card-header">
+                            <h3><i class="fa-solid fa-chart-pie"></i> Session Status Breakdown</h3>
+                            <small class="text-muted">Live lifecycle distribution</small>
+                        </div>
+                        <div class="chart-container">
+                            <canvas id="chart-session-status"></canvas>
+                        </div>
+                    </div>
+                    <div class="chart-card">
+                        <div class="card-header">
+                            <h3><i class="fa-solid fa-chart-column"></i> Skills by Category</h3>
+                            <small class="text-muted">Community offerings</small>
+                        </div>
+                        <div class="chart-container">
+                            <canvas id="chart-skill-categories"></canvas>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Recent Activity Split -->
+                <div class="data-split-grid">
+                    <div class="table-card">
+                        <div class="card-header">
+                            <h3><i class="fa-solid fa-user-plus"></i> Recent Members</h3>
+                            <a href="#members" class="link-view-all" onclick="switchTab('members')">View All</a>
+                        </div>
+                        <div class="table-responsive">
+                            <table class="data-table">
+                                <thead>
+                                    <tr>
+                                        <th>Name</th>
+                                        <th>Email</th>
+                                        <th>Balance</th>
+                                        <th>Details</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="tbody-recent-members">
+                                    <tr><td colspan="4" class="text-center text-muted">Loading...</td></tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <div class="table-card">
+                        <div class="card-header">
+                            <h3><i class="fa-solid fa-bolt"></i> Recent Session Requests</h3>
+                            <a href="#sessions" class="link-view-all" onclick="switchTab('sessions')">View All</a>
+                        </div>
+                        <div class="table-responsive">
+                            <table class="data-table">
+                                <thead>
+                                    <tr>
+                                        <th>Skill</th>
+                                        <th>Requester</th>
+                                        <th>Hours</th>
+                                        <th>Status</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="tbody-recent-sessions">
+                                    <tr><td colspan="4" class="text-center text-muted">Loading...</td></tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- TAB 2: MEMBERS -->
+            <section id="tab-members" class="tab-content">
+                <div class="toolbar">
+                    <div class="search-box">
+                        <i class="fa-solid fa-magnifying-glass"></i>
+                        <input type="text" id="member-search" placeholder="Search members by name or email..." oninput="filterMembersTable()">
+                    </div>
+                    <div class="toolbar-group">
+                        <button class="btn btn-secondary" onclick="openModal('modal-member')">
+                            <i class="fa-solid fa-user-plus"></i>
+                            <span>Register Member</span>
+                        </button>
+                    </div>
+                </div>
+
+                <div class="table-card">
+                    <div class="table-responsive">
+                        <table class="data-table">
+                            <thead>
+                                <tr>
+                                    <th>ID</th>
+                                    <th>Member Name</th>
+                                    <th>Email Address</th>
+                                    <th>Time Credits</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="tbody-members">
+                                <tr><td colspan="5" class="text-center text-muted">Loading members...</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
+
+            <!-- TAB 3: SKILL OFFERS -->
+            <section id="tab-skills" class="tab-content">
+                <div class="toolbar">
+                    <div class="search-box">
+                        <i class="fa-solid fa-magnifying-glass"></i>
+                        <input type="text" id="skill-search" placeholder="Search skills by title, provider, description..." oninput="filterSkills()">
+                    </div>
+                    <div class="toolbar-group">
+                        <select id="skill-category-filter" class="form-select" onchange="filterSkills()">
+                            <option value="">All Categories</option>
+                            <option value="Technology">Technology</option>
+                            <option value="Academics">Academics</option>
+                            <option value="Languages">Languages</option>
+                            <option value="Cooking">Cooking</option>
+                            <option value="Music">Music</option>
+                            <option value="Fitness">Fitness</option>
+                            <option value="Design">Design</option>
+                            <option value="Other">Other</option>
+                        </select>
+                        <button class="btn btn-primary" onclick="openModal('modal-skill')">
+                            <i class="fa-solid fa-plus"></i>
+                            <span>Offer a Skill</span>
+                        </button>
+                    </div>
+                </div>
+
+                <div class="skills-grid" id="skills-cards-container">
+                    <!-- Dynamic Skill Cards -->
+                </div>
+            </section>
+
+            <!-- TAB 4: SESSIONS -->
+            <section id="tab-sessions" class="tab-content">
+                <div class="toolbar">
+                    <div class="status-tabs">
+                        <button class="status-tab active" data-filter="ALL" onclick="filterSessionsByStatus('ALL', this)">All</button>
+                        <button class="status-tab" data-filter="PENDING" onclick="filterSessionsByStatus('PENDING', this)">Pending</button>
+                        <button class="status-tab" data-filter="CONFIRMED" onclick="filterSessionsByStatus('CONFIRMED', this)">Confirmed</button>
+                        <button class="status-tab" data-filter="COMPLETED" onclick="filterSessionsByStatus('COMPLETED', this)">Completed</button>
+                        <button class="status-tab" data-filter="REJECTED" onclick="filterSessionsByStatus('REJECTED', this)">Rejected/Cancelled</button>
+                    </div>
+                    <button class="btn btn-primary" onclick="openModal('modal-session')">
+                        <i class="fa-solid fa-plus"></i>
+                        <span>Book Session</span>
+                    </button>
+                </div>
+
+                <div class="table-card">
+                    <div class="table-responsive">
+                        <table class="data-table">
+                            <thead>
+                                <tr>
+                                    <th>ID</th>
+                                    <th>Skill</th>
+                                    <th>Requester</th>
+                                    <th>Provider</th>
+                                    <th>Hours Req.</th>
+                                    <th>Actual Hours</th>
+                                    <th>Status</th>
+                                    <th>Workflow Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="tbody-sessions">
+                                <tr><td colspan="8" class="text-center text-muted">Loading sessions...</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
+
+            <!-- TAB 5: CREDIT LEDGER -->
+            <section id="tab-ledger" class="tab-content">
+                <div class="toolbar">
+                    <div class="ledger-metrics">
+                        <span class="metric-pill">
+                            <i class="fa-solid fa-arrow-right-arrow-left"></i> Total Transferred: <strong id="ledger-total-hours">0</strong> hrs
+                        </span>
+                    </div>
+                    <div class="search-box">
+                        <i class="fa-solid fa-magnifying-glass"></i>
+                        <input type="text" id="ledger-search" placeholder="Search by member name, description..." oninput="filterLedgerTable()">
+                    </div>
+                </div>
+
+                <div class="table-card">
+                    <div class="table-responsive">
+                        <table class="data-table">
+                            <thead>
+                                <tr>
+                                    <th>Txn ID</th>
+                                    <th>Requester (Debited)</th>
+                                    <th>Provider (Credited)</th>
+                                    <th>Hours Transferred</th>
+                                    <th>Type</th>
+                                    <th>Description</th>
+                                    <th>Timestamp</th>
+                                </tr>
+                            </thead>
+                            <tbody id="tbody-ledger">
+                                <tr><td colspan="7" class="text-center text-muted">Loading ledger entries...</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
+
+            <!-- TAB 6: LIVE REST APIS EXPLORER -->
+            <section id="tab-api-explorer" class="tab-content">
+                <div class="api-explorer-header">
+                    <h2><i class="fa-solid fa-network-wired"></i> Live REST APIs Console</h2>
+                    <p class="subtitle">Directly execute, inspect, and test all Spring Boot backend endpoints in real-time.</p>
+                </div>
+
+                <div class="api-grid">
+                    <!-- Endpoint 1: Dashboard Summary -->
+                    <div class="api-card">
+                        <div class="api-card-header">
+                            <span class="http-badge get">GET</span>
+                            <span class="api-endpoint">/api/dashboard/summary</span>
+                            <button class="btn btn-sm btn-primary api-run-btn" onclick="executeApi('GET', '/api/dashboard/summary', null, 'res-summary')">
+                                <i class="fa-solid fa-play"></i> Send
+                            </button>
+                        </div>
+                        <div class="api-desc">Fetch aggregated KPI stats (members, skills, sessions, circulating credits).</div>
+                        <pre class="api-response-box" id="res-summary">// Click 'Send' to test live response</pre>
+                    </div>
+
+                    <!-- Endpoint 2: Get Members -->
+                    <div class="api-card">
+                        <div class="api-card-header">
+                            <span class="http-badge get">GET</span>
+                            <span class="api-endpoint">/api/members</span>
+                            <button class="btn btn-sm btn-primary api-run-btn" onclick="executeApi('GET', '/api/members', null, 'res-members')">
+                                <i class="fa-solid fa-play"></i> Send
+                            </button>
+                        </div>
+                        <div class="api-desc">Retrieve all registered members and current credit balances.</div>
+                        <pre class="api-response-box" id="res-members">// Click 'Send' to test live response</pre>
+                    </div>
+
+                    <!-- Endpoint 3: Create Member -->
+                    <div class="api-card">
+                        <div class="api-card-header">
+                            <span class="http-badge post">POST</span>
+                            <span class="api-endpoint">/api/members</span>
+                            <button class="btn btn-sm btn-primary api-run-btn" onclick="executeApiWithBody('POST', '/api/members', 'body-member', 'res-create-member')">
+                                <i class="fa-solid fa-play"></i> Send
+                            </button>
+                        </div>
+                        <div class="api-desc">Register new member (starts with default 10 time credits).</div>
+                        <textarea class="api-body-input" id="body-member" rows="3">{"name": "Dev Sharma", "email": "dev.test@skillswap.com"}</textarea>
+                        <pre class="api-response-box" id="res-create-member">// Click 'Send' to test live response</pre>
+                    </div>
+
+                    <!-- Endpoint 4: Get Skills -->
+                    <div class="api-card">
+                        <div class="api-card-header">
+                            <span class="http-badge get">GET</span>
+                            <span class="api-endpoint">/api/skills</span>
+                            <button class="btn btn-sm btn-primary api-run-btn" onclick="executeApi('GET', '/api/skills', null, 'res-skills')">
+                                <i class="fa-solid fa-play"></i> Send
+                            </button>
+                        </div>
+                        <div class="api-desc">Browse all skill offerings across the community marketplace.</div>
+                        <pre class="api-response-box" id="res-skills">// Click 'Send' to test live response</pre>
+                    </div>
+
+                    <!-- Endpoint 5: Get Sessions -->
+                    <div class="api-card">
+                        <div class="api-card-header">
+                            <span class="http-badge get">GET</span>
+                            <span class="api-endpoint">/api/requests</span>
+                            <button class="btn btn-sm btn-primary api-run-btn" onclick="executeApi('GET', '/api/requests', null, 'res-sessions')">
+                                <i class="fa-solid fa-play"></i> Send
+                            </button>
+                        </div>
+                        <div class="api-desc">View all session requests, hours requested, and lifecycle statuses.</div>
+                        <pre class="api-response-box" id="res-sessions">// Click 'Send' to test live response</pre>
+                    </div>
+
+                    <!-- Endpoint 6: Credit Ledger Audit -->
+                    <div class="api-card">
+                        <div class="api-card-header">
+                            <span class="http-badge get">GET</span>
+                            <span class="api-endpoint">/api/credits</span>
+                            <button class="btn btn-sm btn-primary api-run-btn" onclick="executeApi('GET', '/api/credits', null, 'res-credits')">
+                                <i class="fa-solid fa-play"></i> Send
+                            </button>
+                        </div>
+                        <div class="api-desc">Traceable transaction ledger showing debits, credits, and balance audit.</div>
+                        <pre class="api-response-box" id="res-credits">// Click 'Send' to test live response</pre>
+                    </div>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <!-- MODAL: ADD MEMBER -->
+    <div class="modal-overlay" id="modal-member">
+        <div class="modal-box">
+            <div class="modal-header">
+                <h3><i class="fa-solid fa-user-plus"></i> Register New Member</h3>
+                <button class="modal-close" onclick="closeModal('modal-member')">&times;</button>
+            </div>
+            <form id="form-member" onsubmit="handleCreateMember(event)">
+                <div class="form-group">
+                    <label for="member-name">Full Name <span class="required">*</span></label>
+                    <input type="text" id="member-name" class="form-input" placeholder="e.g. Rahul Sharma" required>
+                </div>
+                <div class="form-group">
+                    <label for="member-email">Email Address <span class="required">*</span></label>
+                    <input type="email" id="member-email" class="form-input" placeholder="e.g. rahul@skillswap.com" required>
+                    <small class="form-hint">Every new member starts with an initial balance of 10 time credits.</small>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" onclick="closeModal('modal-member')">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Create Member</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- MODAL: OFFER SKILL -->
+    <div class="modal-overlay" id="modal-skill">
+        <div class="modal-box">
+            <div class="modal-header">
+                <h3><i class="fa-solid fa-lightbulb"></i> Offer a New Skill</h3>
+                <button class="modal-close" onclick="closeModal('modal-skill')">&times;</button>
+            </div>
+            <form id="form-skill" onsubmit="handleCreateSkill(event)">
+                <div id="skill-member-empty-warning" class="alert-box warning-box" style="display: none;">
+                    <i class="fa-solid fa-triangle-exclamation"></i>
+                    <span>No members registered yet! Please add a member first or load sample data.</span>
+                </div>
+                <div class="form-group">
+                    <label for="skill-name">Skill Name / Title <span class="required">*</span></label>
+                    <input type="text" id="skill-name" class="form-input" placeholder="e.g. Java Spring Boot Tutoring" required>
+                </div>
+                <div class="form-group">
+                    <label for="skill-provider">Provider (Offering Member) <span class="required">*</span></label>
+                    <select id="skill-provider" class="form-select" required>
+                        <option value="">Select offering member...</option>
+                    </select>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="skill-category">Category <span class="required">*</span></label>
+                        <select id="skill-category" class="form-select" required>
+                            <option value="Technology">Technology</option>
+                            <option value="Academics">Academics</option>
+                            <option value="Languages">Languages</option>
+                            <option value="Cooking">Cooking</option>
+                            <option value="Music">Music</option>
+                            <option value="Fitness">Fitness</option>
+                            <option value="Design">Design</option>
+                            <option value="Other">Other</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="skill-hours">Hours Available <span class="required">*</span></label>
+                        <input type="number" id="skill-hours" class="form-input" min="1" value="5" required>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label for="skill-desc">Description</label>
+                    <textarea id="skill-desc" class="form-input" rows="3" placeholder="Briefly describe what you will teach..."></textarea>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" onclick="closeModal('modal-skill')">Cancel</button>
+                    <button type="submit" id="btn-submit-skill" class="btn btn-primary">Publish Skill</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- MODAL: BOOK SESSION REQUEST -->
+    <div class="modal-overlay" id="modal-session">
+        <div class="modal-box">
+            <div class="modal-header">
+                <h3><i class="fa-solid fa-calendar-plus"></i> Request a Skill Session</h3>
+                <button class="modal-close" onclick="closeModal('modal-session')">&times;</button>
+            </div>
+            <form id="form-session" onsubmit="handleCreateSession(event)">
+                <div id="session-empty-warning" class="alert-box warning-box" style="display: none;">
+                    <i class="fa-solid fa-triangle-exclamation"></i>
+                    <span>Members or skill offers are needed to book a session. Click 'Load Sample Data' in the topbar to test right away!</span>
+                </div>
+                <div class="form-group">
+                    <label for="session-requester">Requester (Learner) <span class="required">*</span></label>
+                    <select id="session-requester" class="form-select" onchange="checkRequesterCredit()" required>
+                        <option value="">Select requester...</option>
+                    </select>
+                    <div id="requester-credit-hint" class="credit-hint"></div>
+                </div>
+                <div class="form-group">
+                    <label for="session-skill">Skill Offer <span class="required">*</span></label>
+                    <select id="session-skill" class="form-select" required>
+                        <option value="">Select skill offer...</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="session-hours">Hours Requested <span class="required">*</span></label>
+                    <input type="number" id="session-hours" class="form-input" min="1" value="2" oninput="checkRequesterCredit()" required>
+                    <small class="form-hint">Rule: Requester must have sufficient time credits. Credits are transferred ONLY after completion.</small>
+                </div>
+                <div id="credit-warning-box" class="alert-box warning-box" style="display: none;">
+                    <i class="fa-solid fa-triangle-exclamation"></i>
+                    <span id="credit-warning-msg">Insufficient credit balance!</span>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" onclick="closeModal('modal-session')">Cancel</button>
+                    <button type="submit" id="btn-submit-session" class="btn btn-primary">Submit Request</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- MODAL: COMPLETE SESSION -->
+    <div class="modal-overlay" id="modal-complete">
+        <div class="modal-box">
+            <div class="modal-header">
+                <h3><i class="fa-solid fa-circle-check"></i> Complete Session & Transfer Credits</h3>
+                <button class="modal-close" onclick="closeModal('modal-complete')">&times;</button>
+            </div>
+            <form id="form-complete" onsubmit="handleCompleteSession(event)">
+                <input type="hidden" id="complete-session-id">
+                <div class="session-summary-box" id="complete-summary-info">
+                    <!-- Session details populated by JS -->
+                </div>
+                <div class="form-group">
+                    <label for="complete-actual-hours">Actual Hours Delivered <span class="required">*</span></label>
+                    <input type="number" id="complete-actual-hours" class="form-input" min="1" required>
+                    <small class="form-hint">This exact amount of time credits will be debited from requester and credited to provider.</small>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" onclick="closeModal('modal-complete')">Cancel</button>
+                    <button type="submit" class="btn btn-success">Complete & Transfer Credits</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- MODAL: MEMBER DETAILS -->
+    <div class="modal-overlay" id="modal-member-details">
+        <div class="modal-box">
+            <div class="modal-header">
+                <h3><i class="fa-solid fa-id-card"></i> Member Profile & Activity</h3>
+                <button class="modal-close" onclick="closeModal('modal-member-details')">&times;</button>
+            </div>
+            <div class="modal-body-content" id="member-details-body">
+                <!-- Populated dynamically -->
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" onclick="closeModal('modal-member-details')">Close</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast Notification Container -->
+    <div id="toast-container" class="toast-container"></div>
+
+    <script src="/js/dashboard.js"></script>
+</body>
+</html>
